@@ -1,10 +1,13 @@
+import { Suspense } from "react";
 import { MobileNav } from "@/components/MobileNav";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div className="app-shell">{children}</div>
-      <MobileNav />
+      <Suspense fallback={null}>
+        <MobileNav />
+      </Suspense>
     </>
   );
 }

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FlyerProductCard } from "@/components/FlyerProductCard";
 import { useAppState } from "@/context/AppState";
-import { formatMoney, matchRecipesToFlyer, savingsPercent } from "@/lib/matching";
+import { matchRecipesToFlyer } from "@/lib/matching";
 
 export default function FlyerPage() {
   const {
@@ -108,22 +109,7 @@ export default function FlyerPage() {
       ) : (
         <div className="flyer-grid" style={{ marginTop: "1.25rem" }}>
           {flyer.items.map((item) => (
-            <article key={item.id} className="flyer-item">
-              <div>
-                <p className="flyer-item__name">{item.name}</p>
-                <p className="flyer-item__meta">
-                  {item.category} · save{" "}
-                  {savingsPercent(item.salePrice, item.regularPrice)}%
-                </p>
-              </div>
-              <div className="price">
-                <span className="price__sale">
-                  {formatMoney(item.salePrice)}
-                  <small style={{ fontSize: "0.7rem" }}> {item.unit}</small>
-                </span>
-                <span className="price__was">{formatMoney(item.regularPrice)}</span>
-              </div>
-            </article>
+            <FlyerProductCard key={item.id} item={item} />
           ))}
         </div>
       )}

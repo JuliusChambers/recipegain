@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Manrope } from "next/font/google";
+import { Suspense } from "react";
 import { AppStateProvider } from "@/context/AppState";
 import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
@@ -36,12 +37,27 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+function HeaderFallback() {
+  return (
+    <header className="site-header">
+      <div className="site-header__inner">
+        <span className="brand">
+          <span className="brand__mark" aria-hidden />
+          RecipeGain
+        </span>
+      </div>
+    </header>
+  );
+}
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable} h-full`}>
       <body className="min-h-full flex flex-col antialiased">
         <AppStateProvider>
-          <SiteHeader />
+          <Suspense fallback={<HeaderFallback />}>
+            <SiteHeader />
+          </Suspense>
           <div className="flex-1">{children}</div>
         </AppStateProvider>
       </body>

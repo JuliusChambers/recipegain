@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { RecipeCard } from "@/components/RecipeCard";
 import { useAppState } from "@/context/AppState";
-import { recipes } from "@/lib/data/recipes";
+import { formatUnitPrice, unitLabelIsRedundant } from "@/lib/flyers/pricing";
 import {
   dealRankScore,
   formatMoney,
@@ -21,6 +21,7 @@ export default function WeekOverviewPage() {
     flyer,
     flyerSource,
     flyerWarning,
+    getRecipe,
   } = useAppState();
 
   if (!ready) {
@@ -34,7 +35,7 @@ export default function WeekOverviewPage() {
     .filter((item) => item.onSale && item.salePrice != null)
     .reduce((sum, item) => sum + (item.salePrice ?? 0), 0);
   const plannedTitles = mealPlan
-    .map((day) => recipes.find((r) => r.id === day.recipeId)?.title)
+    .map((day) => (day.recipeId ? getRecipe(day.recipeId)?.title : undefined))
     .filter(Boolean)
     .slice(0, 3);
 
@@ -141,11 +142,13 @@ export default function WeekOverviewPage() {
                   </div>
                   <div className="price">
                     <span className="price__sale">
-                      {formatMoney(item.salePrice)}
-                      <small style={{ fontSize: "0.7rem" }}>{item.unit}</small>
+                      {formatUnitPrice(item.salePrice, item.unit)}
                     </span>
+                    {!unitLabelIsRedundant(item.unit, item.unitLabel) ? (
+                      <span className="price__unit">{item.unitLabel}</span>
+                    ) : null}
                     <span className="price__was">
-                      {formatMoney(item.regularPrice)}
+                      was {formatUnitPrice(item.regularPrice, item.unit)}
                     </span>
                   </div>
                 </div>

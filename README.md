@@ -6,7 +6,8 @@ Turn weekly grocery flyer promotions into personalized meals and shopping lists.
 
 - Loads weekly grocery flyer deals by **Canadian postal code** (Apify third-party feed)
 - Falls back to sample stores when no API token is set
-- Matches recipes to sale items
+- Matches recipes to sale items from a **local catalog** (~40 staples)
+- Fills gaps via **TheMealDB** when a tapped flyer product has few/no local matches
 - Filters by diet, allergies, and wellbeing goals
 - Builds a 7-day meal plan and shopping list
 

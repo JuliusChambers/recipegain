@@ -13,4 +13,6 @@ export const STORAGE_KEYS = {
   preferences: "recipegain.preferences",
   mealPlan: "recipegain.mealPlan",
   shoppingChecked: "recipegain.shoppingChecked",
+  shoppingRemoved: "recipegain.shoppingRemoved",
+  recipeLibrary: "recipegain.recipeLibrary",
 } as const;

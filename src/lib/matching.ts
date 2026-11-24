@@ -62,6 +62,68 @@ function goalBoost(recipe: Recipe, prefs: UserPreferences): number {
   return boost;
 }
 
+function recipeUsesFlyerItem(recipe: Recipe, item: FlyerItem): boolean {
+  if (recipe.matchKeywords.some((keyword) => itemMatchesKeyword(item, keyword))) {
+    return true;
+  }
+  if (
+    recipe.ingredients.some(
+      (ing) => itemMatchesKeyword(item, ing.name) || itemMatchesKeyword(item, normalize(ing.name)),
+    )
+  ) {
+    return true;
+  }
+
+  const recipeText = normalize(
+    [recipe.title, ...recipe.matchKeywords, ...recipe.ingredients.map((i) => i.name)].join(" "),
+  );
+  const tokens = normalize([item.name, ...item.tags].join(" "))
+    .split(/\s+/)
+    .filter((token) => token.length > 3);
+
+  return tokens.some((token) => recipeText.includes(token));
+}
+
+function scoreRecipeMatch(
+  recipe: Recipe,
+  matchedItems: FlyerItem[],
+  flyerItems: FlyerItem[],
+  prefs: UserPreferences,
+): MatchedRecipe {
+  const estimatedSavings = matchedItems.reduce(
+    (sum, item) => sum + (item.regularPrice - item.salePrice),
+    0,
+  );
+
+  const missingIngredients = recipe.ingredients
+    .filter((ing) => !ing.optional)
+    .filter(
+      (ing) =>
+        !matchedItems.some((item) => itemMatchesKeyword(item, ing.name)) &&
+        !flyerItems.some((item) => itemMatchesKeyword(item, ing.name)),
+    )
+    .map((ing) => ing.name);
+
+  const coverage =
+    recipe.matchKeywords.length > 0
+      ? matchedItems.length / recipe.matchKeywords.length
+      : 0;
+  const matchScore =
+    coverage * 10 +
+    matchedItems.length * 2 +
+    estimatedSavings +
+    goalBoost(recipe, prefs) -
+    missingIngredients.length * 0.5;
+
+  return {
+    recipe,
+    matchedItems,
+    matchScore,
+    estimatedSavings: Number(estimatedSavings.toFixed(2)),
+    missingIngredients,
+  };
+}
+
 export function matchRecipesToFlyer(
   flyer: WeeklyFlyer,
   prefs: UserPreferences,
@@ -81,36 +143,39 @@ export function matchRecipesToFlyer(
     }
 
     if (matchedItems.length === 0) continue;
+    matches.push(scoreRecipeMatch(recipe, matchedItems, flyer.items, prefs));
+  }
 
-    const estimatedSavings = matchedItems.reduce(
-      (sum, item) => sum + (item.regularPrice - item.salePrice),
-      0,
-    );
+  return matches.sort((a, b) => b.matchScore - a.matchScore);
+}
 
-    const missingIngredients = recipe.ingredients
-      .filter((ing) => !ing.optional)
-      .filter(
-        (ing) =>
-          !matchedItems.some((item) => itemMatchesKeyword(item, ing.name)) &&
-          !flyer.items.some((item) => itemMatchesKeyword(item, ing.name)),
-      )
-      .map((ing) => ing.name);
+/** Recipes that can use a specific sale item the shopper tapped. */
+export function matchRecipesToFlyerItem(
+  item: FlyerItem,
+  prefs: UserPreferences,
+  flyer?: WeeklyFlyer | null,
+): MatchedRecipe[] {
+  const flyerItems = flyer?.items ?? [item];
+  const matches: MatchedRecipe[] = [];
 
-    const coverage = matchedItems.length / recipe.matchKeywords.length;
-    const matchScore =
-      coverage * 10 +
-      matchedItems.length * 2 +
-      estimatedSavings +
-      goalBoost(recipe, prefs) -
-      missingIngredients.length * 0.5;
+  for (const recipe of recipes) {
+    if (!recipeFitsPreferences(recipe, prefs)) continue;
+    if (!recipeUsesFlyerItem(recipe, item)) continue;
 
-    matches.push({
-      recipe,
-      matchedItems,
-      matchScore,
-      estimatedSavings: Number(estimatedSavings.toFixed(2)),
-      missingIngredients,
-    });
+    const matchedItems: FlyerItem[] = [item];
+    for (const keyword of recipe.matchKeywords) {
+      for (const other of flyerItems) {
+        if (
+          other.id !== item.id &&
+          itemMatchesKeyword(other, keyword) &&
+          !matchedItems.some((m) => m.id === other.id)
+        ) {
+          matchedItems.push(other);
+        }
+      }
+    }
+
+    matches.push(scoreRecipeMatch(recipe, matchedItems, flyerItems, prefs));
   }
 
   return matches.sort((a, b) => b.matchScore - a.matchScore);

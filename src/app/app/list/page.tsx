@@ -5,7 +5,13 @@ import { stores } from "@/lib/data/stores";
 import { formatMoney } from "@/lib/matching";
 
 export default function ShoppingListPage() {
-  const { shoppingList, toggleShoppingItem, ready, preferences } = useAppState();
+  const {
+    shoppingList,
+    toggleShoppingItem,
+    removeShoppingItem,
+    ready,
+    preferences,
+  } = useAppState();
   const storeName =
     stores.find((s) => s.id === preferences.storeId)?.name ?? preferences.storeId;
 
@@ -22,7 +28,8 @@ export default function ShoppingListPage() {
       <h1 className="page-title">Shopping list</h1>
       <p className="page-lede">
         Generated from your weekly meals. Sale items from your selected store
-        are highlighted so you capture the flyer savings.
+        are highlighted so you capture the flyer savings. Remove anything you
+        already have — regenerating meals restores the full list.
       </p>
 
       <div className="stat-row">
@@ -47,7 +54,7 @@ export default function ShoppingListPage() {
           </div>
         ) : (
           shoppingList.map((item) => (
-            <label
+            <div
               key={item.name}
               className={item.checked ? "list-item is-checked" : "list-item"}
             >
@@ -56,6 +63,7 @@ export default function ShoppingListPage() {
                 type="checkbox"
                 checked={item.checked}
                 onChange={() => toggleShoppingItem(item.name)}
+                aria-label={`Mark ${item.name} as bought`}
               />
               <div>
                 <p className="list-item__name">{item.name}</p>
@@ -67,17 +75,28 @@ export default function ShoppingListPage() {
                     : ""}
                 </p>
               </div>
-              <div className="price">
-                {item.onSale && item.salePrice != null ? (
-                  <>
-                    <span className="price__sale">{formatMoney(item.salePrice)}</span>
-                    <span className="list-item__meta">{storeName}</span>
-                  </>
-                ) : (
-                  <span className="list-item__meta">—</span>
-                )}
+              <div className="list-item__aside">
+                <div className="price">
+                  {item.onSale && item.salePrice != null ? (
+                    <>
+                      <span className="price__sale">
+                        {formatMoney(item.salePrice)}
+                      </span>
+                      <span className="list-item__meta">{storeName}</span>
+                    </>
+                  ) : (
+                    <span className="list-item__meta">—</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--compact"
+                  onClick={() => removeShoppingItem(item.name)}
+                >
+                  Remove
+                </button>
               </div>
-            </label>
+            </div>
           ))
         )}
       </section>

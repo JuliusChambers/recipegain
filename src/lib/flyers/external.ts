@@ -1,4 +1,5 @@
 import { isFoodDeal } from "@/lib/flyers/foodFilter";
+import { inferPricing } from "@/lib/flyers/pricing";
 import type { FlyerItem, WeeklyFlyer } from "@/lib/types";
 
 export interface ExternalDeal {
@@ -55,14 +56,6 @@ export function slugifyMerchant(name: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 48);
-}
-
-function extractUnit(priceText?: string | null): string {
-  if (!priceText) return "each";
-  const match = priceText.match(/\/\s*(lb|kg|g|ml|l|ea|each|pack|bag|can|bunch)/i);
-  if (match) return `/${match[1].toLowerCase()}`;
-  if (/\/\s*lb/i.test(priceText)) return "/lb";
-  return "each";
 }
 
 function tagsFromName(name: string): string[] {
@@ -127,14 +120,27 @@ export function dealsToFlyers(
           ? regularRaw
           : Number((salePrice * 1.25).toFixed(2));
 
+      const rawImage =
+        typeof deal.imageUrl === "string" && deal.imageUrl.startsWith("http")
+          ? deal.imageUrl
+          : undefined;
+      // Flyer CDNs often return http://; prefer https for browser embedding.
+      const imageUrl = rawImage?.replace(/^http:\/\//i, "https://");
+      const pricing = inferPricing(deal);
+
       items.push({
         id: String(deal.dealId ?? `${storeId}-${items.length}`),
         name,
         category: deal.category?.split(">").pop()?.trim() || "Grocery",
         salePrice,
         regularPrice,
-        unit: extractUnit(deal.priceText),
+        unit: pricing.unit,
+        unitKind: pricing.unitKind,
+        unitLabel: pricing.unitLabel,
+        packageSize: pricing.packageSize,
+        saleStory: pricing.saleStory,
         tags: tagsFromName(name),
+        imageUrl,
       });
     }
 

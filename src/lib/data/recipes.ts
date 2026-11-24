@@ -1,6 +1,8 @@
+import { withRecipeImage } from "@/lib/data/recipe-images";
+import { expandedRecipes } from "@/lib/data/recipes-expanded";
 import type { Recipe } from "@/lib/types";
 
-export const recipes: Recipe[] = [
+const coreRecipes: Recipe[] = [
   {
     id: "garlic-chicken-rice-bowl",
     title: "Garlic Chicken Rice Bowl",
@@ -27,6 +29,7 @@ export const recipes: Recipe[] = [
     ],
     matchKeywords: ["chicken", "rice", "broccoli"],
     imageHue: 145,
+    source: "local",
   },
   {
     id: "lemon-salmon-spinach",
@@ -53,6 +56,7 @@ export const recipes: Recipe[] = [
     ],
     matchKeywords: ["salmon", "spinach", "fish"],
     imageHue: 195,
+    source: "local",
   },
   {
     id: "avocado-egg-toast-bowl",
@@ -79,6 +83,7 @@ export const recipes: Recipe[] = [
     ],
     matchKeywords: ["eggs", "avocado", "tomato", "spinach"],
     imageHue: 95,
+    source: "local",
   },
   {
     id: "black-bean-tomato-skillet",
@@ -105,6 +110,7 @@ export const recipes: Recipe[] = [
     ],
     matchKeywords: ["beans", "tomato", "rice"],
     imageHue: 25,
+    source: "local",
   },
   {
     id: "turkey-zucchini-pasta",
@@ -131,6 +137,7 @@ export const recipes: Recipe[] = [
     ],
     matchKeywords: ["turkey", "pasta", "zucchini"],
     imageHue: 35,
+    source: "local",
   },
   {
     id: "chickpea-pepper-stew",
@@ -157,6 +164,7 @@ export const recipes: Recipe[] = [
     ],
     matchKeywords: ["chickpeas", "pepper", "vegetable"],
     imageHue: 12,
+    source: "local",
   },
   {
     id: "sweet-potato-tofu-tray",
@@ -183,6 +191,7 @@ export const recipes: Recipe[] = [
     ],
     matchKeywords: ["sweet-potato", "tofu", "pepper"],
     imageHue: 28,
+    source: "local",
   },
   {
     id: "overnight-oats-yogurt",
@@ -208,6 +217,7 @@ export const recipes: Recipe[] = [
     ],
     matchKeywords: ["oats", "yogurt", "berries"],
     imageHue: 320,
+    source: "local",
   },
   {
     id: "quinoa-kale-bowl",
@@ -234,6 +244,7 @@ export const recipes: Recipe[] = [
     ],
     matchKeywords: ["quinoa", "kale", "mushroom"],
     imageHue: 110,
+    source: "local",
   },
   {
     id: "red-lentil-soup",
@@ -260,6 +271,7 @@ export const recipes: Recipe[] = [
     ],
     matchKeywords: ["lentils", "legume"],
     imageHue: 18,
+    source: "local",
   },
   {
     id: "herb-cod-vegetables",
@@ -286,6 +298,7 @@ export const recipes: Recipe[] = [
     ],
     matchKeywords: ["cod", "kale", "mushroom", "fish"],
     imageHue: 210,
+    source: "local",
   },
   {
     id: "hummus-veggie-plate",
@@ -311,5 +324,15 @@ export const recipes: Recipe[] = [
     ],
     matchKeywords: ["hummus", "pepper", "chickpeas"],
     imageHue: 42,
+    source: "local",
   },
 ];
+
+export const recipes: Recipe[] = [
+  ...coreRecipes,
+  ...expandedRecipes.map((recipe) => ({ ...recipe, source: "local" as const })),
+].map(withRecipeImage);
+
+export function findLocalRecipe(id: string): Recipe | undefined {
+  return recipes.find((recipe) => recipe.id === id);
+}

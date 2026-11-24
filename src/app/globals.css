@@ -782,9 +782,104 @@ select {
   grid-template-columns: 84px 1fr;
 }
 
+.recipe-card--stack {
+  grid-template-columns: 1fr;
+}
+
+.recipe-card--stack .recipe-card__visual {
+  min-height: 168px;
+  aspect-ratio: 16 / 10;
+  border-radius: calc(var(--radius) - 2px);
+  overflow: hidden;
+}
+
+.recipe-card--stack .recipe-card__body {
+  padding: 0.75rem 0 0;
+}
+
 .recipe-card__visual {
   min-height: 110px;
   position: relative;
+  background: var(--bg-deep);
+}
+
+.recipe-card__visual--link {
+  display: block;
+}
+
+.recipe-card__title-link:hover {
+  color: var(--brand-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.recipe-detail {
+  display: grid;
+  gap: 1rem;
+}
+
+.recipe-detail__media {
+  width: min(100%, 320px);
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg-deep);
+}
+
+.recipe-detail__img,
+.recipe-detail__placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.recipe-detail__list {
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.recipe-detail__steps {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.recipe-detail__steps li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.recipe-detail__step-n {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(31, 107, 74, 0.12);
+  color: var(--brand-deep);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.recipe-detail__steps p {
+  margin: 0.15rem 0 0;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.recipe-card__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .recipe-card__time {
@@ -797,6 +892,20 @@ select {
   padding: 0.2rem 0.55rem;
   font-size: 0.75rem;
   font-weight: 600;
+  z-index: 1;
+}
+
+.recipe-card__source {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  background: rgba(15, 35, 26, 0.75);
+  color: #f8fbf7;
+  border-radius: 999px;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  z-index: 1;
 }
 
 .recipe-card__body {
@@ -855,15 +964,123 @@ select {
   border-radius: 14px;
 }
 
+.flyer-item--media {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  align-items: stretch;
+  gap: 0.85rem;
+  padding: 0.7rem;
+  overflow: hidden;
+}
+
+.flyer-item__photo {
+  position: relative;
+  width: 96px;
+  min-height: 96px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg-deep);
+}
+
+.flyer-item__photo--link {
+  display: block;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.flyer-item__photo--link:hover,
+.flyer-item__photo--link:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(28, 42, 34, 0.16);
+  outline: none;
+}
+
+.flyer-item__photo-cue {
+  position: absolute;
+  left: 0.4rem;
+  right: 0.4rem;
+  bottom: 0.4rem;
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--brand-deep);
+  background: rgba(251, 253, 248, 0.92);
+  border-radius: 999px;
+  padding: 0.2rem 0.35rem;
+}
+
+.flyer-item__name-link:hover {
+  color: var(--brand-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.product-hero {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+  align-items: center;
+}
+
+.product-hero__media {
+  width: min(100%, 220px);
+  aspect-ratio: 1;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg-deep);
+}
+
+.product-hero__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.flyer-item__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.flyer-item__placeholder {
+  width: 100%;
+  height: 100%;
+  min-height: 96px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #d7e6d4, #b7cfc0);
+  color: var(--brand-deep);
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.6rem;
+}
+
+.flyer-item__body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.55rem;
+  min-width: 0;
+  padding: 0.15rem 0.35rem 0.15rem 0;
+}
+
 .flyer-item__name {
   margin: 0 0 0.2rem;
   font-weight: 600;
+  line-height: 1.25;
 }
 
 .flyer-item__meta {
   margin: 0;
   color: var(--muted);
   font-size: 0.85rem;
+}
+
+.flyer-item--media .price {
+  text-align: left;
 }
 
 .price {
@@ -875,12 +1092,28 @@ select {
   font-family: var(--font-display), Georgia, serif;
   font-size: 1.25rem;
   color: var(--sale);
+  line-height: 1.15;
+}
+
+.price__unit {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .price__was {
+  display: block;
+  margin-top: 0.15rem;
   color: var(--muted);
   text-decoration: line-through;
   font-size: 0.85rem;
+}
+
+.flyer-item__promo {
+  color: var(--sale) !important;
+  font-weight: 600;
 }
 
 .meal-day {
@@ -890,6 +1123,20 @@ select {
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: var(--radius);
+}
+
+.meal-day .recipe-card--stack {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+.meal-day__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .meal-day__label {
@@ -906,6 +1153,13 @@ select {
   align-items: start;
   padding: 0.85rem 0;
   border-bottom: 1px solid var(--line);
+}
+
+.list-item__aside {
+  display: grid;
+  gap: 0.45rem;
+  justify-items: end;
+  text-align: right;
 }
 
 .list-item:last-child {
@@ -1075,6 +1329,24 @@ select {
 
   .flyer-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .flyer-item--media {
+    grid-template-columns: 112px 1fr;
+  }
+
+  .flyer-item__photo {
+    width: 112px;
+    min-height: 112px;
+  }
+
+  .product-hero {
+    grid-template-columns: 200px 1fr;
+  }
+
+  .recipe-detail {
+    grid-template-columns: 280px 1fr;
+    align-items: start;
   }
 
   .meal-grid {

@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { findLocalRecipe } from "@/lib/data/recipes";
 import { defaultPreferences, STORAGE_KEYS } from "@/lib/defaults";
 import type { FlyerFetchResult } from "@/lib/flyers/external";
 import {
@@ -18,6 +19,7 @@ import {
 } from "@/lib/matching";
 import type {
   MealPlanDay,
+  Recipe,
   ShoppingListItem,
   UserPreferences,
   WeeklyFlyer,
@@ -32,6 +34,7 @@ interface AppStateValue {
   regeneratePlan: () => void;
   shoppingList: ShoppingListItem[];
   toggleShoppingItem: (name: string) => void;
+  removeShoppingItem: (name: string) => void;
   ready: boolean;
   flyer: WeeklyFlyer | null;
   flyers: WeeklyFlyer[];
@@ -39,6 +42,8 @@ interface AppStateValue {
   flyerSource: "live" | "sample" | "loading";
   flyerWarning?: string;
   refreshFlyer: () => Promise<void>;
+  rememberRecipe: (recipe: Recipe) => void;
+  getRecipe: (id: string) => Recipe | undefined;
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null);
@@ -65,6 +70,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     useState<UserPreferences>(defaultPreferences);
   const [mealPlan, setMealPlan] = useState<MealPlanDay[]>([]);
   const [checkedMap, setCheckedMap] = useState<Record<string, boolean>>({});
+  const [removedShopping, setRemovedShopping] = useState<string[]>([]);
   const [ready, setReady] = useState(false);
   const [flyers, setFlyers] = useState<WeeklyFlyer[]>([]);
   const [merchants, setMerchants] = useState<
@@ -74,6 +80,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     "loading",
   );
   const [flyerWarning, setFlyerWarning] = useState<string | undefined>();
+  const [recipeLibrary, setRecipeLibrary] = useState<Record<string, Recipe>>({});
 
   const loadFlyer = useCallback(
     async (
@@ -109,6 +116,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           });
           setMealPlan(buildWeeklyMealPlan(matches));
           setCheckedMap({});
+          setRemovedShopping([]);
         }
       } catch (error) {
         setFlyerSource("sample");
@@ -136,9 +144,30 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       STORAGE_KEYS.shoppingChecked,
       {},
     );
+    const removed = (() => {
+      try {
+        const raw = window.localStorage.getItem(STORAGE_KEYS.shoppingRemoved);
+        const parsed = raw ? (JSON.parse(raw) as string[]) : [];
+        return Array.isArray(parsed)
+          ? parsed.map((name) => name.toLowerCase())
+          : [];
+      } catch {
+        return [];
+      }
+    })();
+    const library = (() => {
+      try {
+        const raw = window.localStorage.getItem(STORAGE_KEYS.recipeLibrary);
+        return raw ? (JSON.parse(raw) as Record<string, Recipe>) : {};
+      } catch {
+        return {};
+      }
+    })();
 
     setPreferencesState(prefs);
     setCheckedMap(checked);
+    setRemovedShopping(removed);
+    setRecipeLibrary(library);
     if (savedPlan.length === 7) setMealPlan(savedPlan);
 
     void loadFlyer(prefs, { keepPlan: savedPlan.length === 7 }).finally(() =>
@@ -166,6 +195,31 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       JSON.stringify(checkedMap),
     );
   }, [checkedMap, ready]);
+
+  useEffect(() => {
+    if (!ready) return;
+    window.localStorage.setItem(
+      STORAGE_KEYS.shoppingRemoved,
+      JSON.stringify(removedShopping),
+    );
+  }, [removedShopping, ready]);
+
+  useEffect(() => {
+    if (!ready) return;
+    window.localStorage.setItem(
+      STORAGE_KEYS.recipeLibrary,
+      JSON.stringify(recipeLibrary),
+    );
+  }, [recipeLibrary, ready]);
+
+  const rememberRecipe = useCallback((recipe: Recipe) => {
+    setRecipeLibrary((prev) => ({ ...prev, [recipe.id]: recipe }));
+  }, []);
+
+  const getRecipe = useCallback(
+    (id: string) => findLocalRecipe(id) ?? recipeLibrary[id],
+    [recipeLibrary],
+  );
 
   const flyer = useMemo(
     () =>
@@ -205,10 +259,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           const matches = matchRecipesToFlyer(selected, next);
           setMealPlan(buildWeeklyMealPlan(matches));
           setCheckedMap({});
+          setRemovedShopping([]);
         } else if (dietChanged && flyer) {
           const matches = matchRecipesToFlyer(flyer, next);
           setMealPlan(buildWeeklyMealPlan(matches));
           setCheckedMap({});
+          setRemovedShopping([]);
         }
 
         return next;
@@ -222,6 +278,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const matches = matchRecipesToFlyer(flyer, preferences);
     setMealPlan(buildWeeklyMealPlan(matches));
     setCheckedMap({});
+    setRemovedShopping([]);
   }, [flyer, preferences]);
 
   const setMealForDay = useCallback((day: string, recipeId: string | null) => {
@@ -233,16 +290,32 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const shoppingList = useMemo(() => {
     if (!flyer) return [];
     const matches = matchRecipesToFlyer(flyer, preferences);
-    const list = buildShoppingList(flyer, matches, mealPlan);
+    const removed = new Set(removedShopping);
+    const list = buildShoppingList(flyer, matches, mealPlan).filter(
+      (item) => !removed.has(item.name.toLowerCase()),
+    );
     return list.map((item) => ({
       ...item,
       checked: Boolean(checkedMap[item.name.toLowerCase()]),
     }));
-  }, [preferences, mealPlan, checkedMap, flyer]);
+  }, [preferences, mealPlan, checkedMap, removedShopping, flyer]);
 
   const toggleShoppingItem = useCallback((name: string) => {
     const key = name.toLowerCase();
     setCheckedMap((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+
+  const removeShoppingItem = useCallback((name: string) => {
+    const key = name.toLowerCase();
+    setRemovedShopping((prev) =>
+      prev.includes(key) ? prev : [...prev, key],
+    );
+    setCheckedMap((prev) => {
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   }, []);
 
   const refreshFlyer = useCallback(async () => {
@@ -259,6 +332,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       regeneratePlan,
       shoppingList,
       toggleShoppingItem,
+      removeShoppingItem,
       ready,
       flyer,
       flyers,
@@ -266,6 +340,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       flyerSource,
       flyerWarning,
       refreshFlyer,
+      rememberRecipe,
+      getRecipe,
     }),
     [
       preferences,
@@ -276,6 +352,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       regeneratePlan,
       shoppingList,
       toggleShoppingItem,
+      removeShoppingItem,
       ready,
       flyer,
       flyers,
@@ -283,6 +360,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       flyerSource,
       flyerWarning,
       refreshFlyer,
+      rememberRecipe,
+      getRecipe,
     ],
   );
 

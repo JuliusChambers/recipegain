@@ -2,7 +2,6 @@
 
 import { RecipeCard } from "@/components/RecipeCard";
 import { useAppState } from "@/context/AppState";
-import { recipes } from "@/lib/data/recipes";
 import { matchRecipesToFlyer } from "@/lib/matching";
 
 export default function MealsPage() {
@@ -13,6 +12,7 @@ export default function MealsPage() {
     regeneratePlan,
     ready,
     flyer,
+    getRecipe,
   } = useAppState();
 
   if (!ready) return <p className="page-lede">Building meals…</p>;
@@ -50,11 +50,24 @@ export default function MealsPage() {
           {mealPlan.map((day) => {
             const match =
               (day.recipeId && matchById.get(day.recipeId)) || null;
-            const fallbackRecipe = recipes.find((r) => r.id === day.recipeId);
+            const fallbackRecipe = day.recipeId
+              ? getRecipe(day.recipeId)
+              : undefined;
 
             return (
               <section key={day.day} className="meal-day">
-                <span className="meal-day__label">{day.day}</span>
+                <div className="meal-day__head">
+                  <span className="meal-day__label">{day.day}</span>
+                  {day.recipeId ? (
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--compact"
+                      onClick={() => setMealForDay(day.day, null)}
+                    >
+                      Remove
+                    </button>
+                  ) : null}
+                </div>
                 <label className="field">
                   <span className="visually-hidden">
                     Choose recipe for {day.day}
@@ -65,6 +78,7 @@ export default function MealsPage() {
                       setMealForDay(day.day, e.target.value || null)
                     }
                   >
+                    <option value="">No recipe</option>
                     {matches.map((m) => (
                       <option key={m.recipe.id} value={m.recipe.id}>
                         {m.recipe.title}
@@ -80,7 +94,18 @@ export default function MealsPage() {
                   </select>
                 </label>
                 {match ? (
-                  <RecipeCard match={match} compact />
+                  <RecipeCard match={match} stack />
+                ) : fallbackRecipe ? (
+                  <RecipeCard
+                    stack
+                    match={{
+                      recipe: fallbackRecipe,
+                      matchedItems: [],
+                      matchScore: 0,
+                      estimatedSavings: 0,
+                      missingIngredients: [],
+                    }}
+                  />
                 ) : (
                   <p className="page-lede" style={{ margin: 0 }}>
                     Pick a matched recipe for this day.

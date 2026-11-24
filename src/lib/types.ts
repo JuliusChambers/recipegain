@@ -30,14 +30,32 @@ export interface UserPreferences {
   postalCode: string;
 }
 
+export type PriceUnitKind =
+  | "weight"
+  | "volume"
+  | "each"
+  | "pack"
+  | "multi";
+
 export interface FlyerItem {
   id: string;
   name: string;
   category: string;
   salePrice: number;
   regularPrice: number;
+  /** Short unit suffix for display, e.g. "/lb", "ea", "/kg", "pack". */
   unit: string;
+  /** How the sale price is sold (weight vs pack vs each). */
+  unitKind: PriceUnitKind;
+  /** Human label shown under the price, e.g. "per lb", "per 150-170 g pack". */
+  unitLabel: string;
+  /** Optional size parsed from the product name (e.g. "2kg", "540ml"). */
+  packageSize?: string;
+  /** Promo line from the flyer when available (e.g. "2 for $5"). */
+  saleStory?: string;
   tags: string[];
+  /** Product photo from the flyer feed when available. */
+  imageUrl?: string;
 }
 
 export interface WeeklyFlyer {
@@ -63,6 +81,9 @@ export interface Recipe {
   steps: string[];
   matchKeywords: string[];
   imageHue: number;
+  /** Optional photo (e.g. TheMealDB). */
+  imageUrl?: string;
+  source?: "local" | "themealdb";
 }
 
 export interface MatchedRecipe {

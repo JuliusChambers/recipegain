@@ -1,7 +1,71 @@
-import type { WeeklyFlyer } from "@/lib/types";
+import { inferPricing } from "@/lib/flyers/pricing";
+import type { FlyerItem, WeeklyFlyer } from "@/lib/types";
+
+type SampleItem = Omit<
+  FlyerItem,
+  "unitKind" | "unitLabel" | "packageSize" | "saleStory"
+> & {
+  unit: string;
+};
+
+function enrichItem(item: SampleItem): FlyerItem {
+  const pricing = inferPricing({
+    name: item.name,
+    category: item.category,
+    // Seed inference with the hand-authored unit when present.
+    priceText:
+      item.unit.startsWith("/") || item.unit === "each" || item.unit === "ea"
+        ? item.unit
+        : `per ${item.unit}`,
+  });
+
+  // Prefer explicit sample unit when it is already specific.
+  const unit =
+    item.unit === "each"
+      ? pricing.unit === "/lb" || pricing.unit === "/kg" || pricing.unit === "/100g"
+        ? pricing.unit
+        : "ea"
+      : item.unit.startsWith("/")
+        ? item.unit
+        : pricing.unitKind === "pack"
+          ? pricing.unit
+          : item.unit;
+
+  const unitLabel =
+    unit === "/lb"
+      ? "per lb"
+      : unit === "/kg"
+        ? "per kg"
+        : unit === "/100g"
+          ? "per 100 g"
+          : unit === "ea" || unit === "each"
+            ? "each"
+            : pricing.packageSize
+              ? `per ${pricing.packageSize}`
+              : `per ${unit}`;
+
+  return {
+    ...item,
+    unit,
+    unitKind:
+      unit.startsWith("/")
+        ? "weight"
+        : unit === "ea" || unit === "each"
+          ? "each"
+          : "pack",
+    unitLabel,
+    packageSize: pricing.packageSize,
+  };
+}
+
+function enrichFlyer(
+  flyer: Omit<WeeklyFlyer, "items"> & { items: SampleItem[] },
+): WeeklyFlyer {
+  return { ...flyer, items: flyer.items.map(enrichItem) };
+}
 
 export const weeklyFlyers: WeeklyFlyer[] = [
-  {
+  enrichFlyer({
     id: "freshmart-2026-w47",
     storeId: "freshmart",
     storeName: "FreshMart",
@@ -100,8 +164,8 @@ export const weeklyFlyers: WeeklyFlyer[] = [
         tags: ["yogurt", "dairy", "protein"],
       },
     ],
-  },
-  {
+  }),
+  enrichFlyer({
     id: "valuefoods-2026-w47",
     storeId: "valuefoods",
     storeName: "Value Foods",
@@ -182,8 +246,8 @@ export const weeklyFlyers: WeeklyFlyer[] = [
         tags: ["oats", "breakfast", "grain"],
       },
     ],
-  },
-  {
+  }),
+  enrichFlyer({
     id: "greenaisle-2026-w47",
     storeId: "greenaisle",
     storeName: "Green Aisle",
@@ -255,7 +319,7 @@ export const weeklyFlyers: WeeklyFlyer[] = [
         tags: ["hummus", "chickpeas", "snack"],
       },
     ],
-  },
+  }),
 ];
 
 export function getFlyerByStore(storeId: string): WeeklyFlyer | undefined {
